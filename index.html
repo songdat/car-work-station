@@ -15,6 +15,7 @@ body {
     color: white;
 }
 
+/* BUTTON STYLE */
 button {
     width: 90px;
     height: 90px;
@@ -30,6 +31,7 @@ button.active {
     background: orange;
 }
 
+/* CONTROL LAYOUT */
 .controls {
     margin-top: 30px;
 }
@@ -40,10 +42,12 @@ button.active {
 
 <h2>🏫 Office Robot Car (Tank Mode)</h2>
 
+<!-- SPEED CONTROL -->
 <label>Speed</label><br>
 <input type="range" min="0" max="1023" value="600" id="speed">
 <div id="val">600</div>
 
+<!-- CONTROL BUTTONS -->
 <div class="controls">
     <div>
         <button id="w">W</button>
@@ -56,6 +60,7 @@ button.active {
 </div>
 
 <script>
+// ===== MQTT =====
 const topic = "esp/officecar";
 const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
 
@@ -63,7 +68,7 @@ function send(cmd){
     client.publish(topic, cmd);
 }
 
-// SPEED
+// ===== SPEED =====
 const slider = document.getElementById("speed");
 const val = document.getElementById("val");
 
@@ -72,7 +77,7 @@ slider.oninput = ()=>{
     send("SPD:" + slider.value);
 };
 
-// BUTTONS
+// ===== BUTTON MAP =====
 const map = {
     w: document.getElementById("w"),
     a: document.getElementById("a"),
@@ -80,24 +85,50 @@ const map = {
     d: document.getElementById("d"),
 };
 
+// ===== CONTROL FUNCTIONS =====
 function press(k){
+    if(!map[k]) return;
+
     map[k].classList.add("active");
     send(k.toUpperCase() + "_ON");
 }
 
 function release(k){
+    if(!map[k]) return;
+
     map[k].classList.remove("active");
     send("STOP");
 }
 
-// TOUCH + MOUSE
+// ===== KEYBOARD CONTROL =====
+document.addEventListener("keydown", (e)=>{
+    const key = e.key.toLowerCase();
+
+    if(e.repeat) return;
+
+    if(map[key]){
+        press(key);
+    }
+});
+
+document.addEventListener("keyup", (e)=>{
+    const key = e.key.toLowerCase();
+
+    if(map[key]){
+        release(key);
+    }
+});
+
+// ===== TOUCH + MOUSE =====
 Object.keys(map).forEach(k=>{
     let b = map[k];
 
+    // MOUSE
     b.onmousedown = ()=> press(k);
     b.onmouseup = ()=> release(k);
     b.onmouseleave = ()=> release(k);
 
+    // TOUCH
     b.ontouchstart = (e)=>{
         e.preventDefault();
         press(k);
