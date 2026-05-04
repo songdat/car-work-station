@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Office Robot Car</title>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+body {
+    font-family: Arial;
+    text-align: center;
+    background: #111;
+    color: white;
+}
+
+button {
+    width: 90px;
+    height: 90px;
+    font-size: 28px;
+    margin: 5px;
+    border-radius: 15px;
+    border: none;
+    background: #444;
+    color: white;
+}
+
+button.active {
+    background: orange;
+}
+
+.controls {
+    margin-top: 30px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🏫 Office Robot Car (Tank Mode)</h2>
+
+<label>Speed</label><br>
+<input type="range" min="0" max="1023" value="600" id="speed">
+<div id="val">600</div>
+
+<div class="controls">
+    <div>
+        <button id="w">W</button>
+    </div>
+    <div>
+        <button id="a">A</button>
+        <button id="s">S</button>
+        <button id="d">D</button>
+    </div>
+</div>
+
+<script>
+const topic = "esp/officecar";
+const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
+
+function send(cmd){
+    client.publish(topic, cmd);
+}
+
+// SPEED
+const slider = document.getElementById("speed");
+const val = document.getElementById("val");
+
+slider.oninput = ()=>{
+    val.innerText = slider.value;
+    send("SPD:" + slider.value);
+};
+
+// BUTTONS
+const map = {
+    w: document.getElementById("w"),
+    a: document.getElementById("a"),
+    s: document.getElementById("s"),
+    d: document.getElementById("d"),
+};
+
+function press(k){
+    map[k].classList.add("active");
+    send(k.toUpperCase() + "_ON");
+}
+
+function release(k){
+    map[k].classList.remove("active");
+    send("STOP");
+}
+
+// TOUCH + MOUSE
+Object.keys(map).forEach(k=>{
+    let b = map[k];
+
+    b.onmousedown = ()=> press(k);
+    b.onmouseup = ()=> release(k);
+    b.onmouseleave = ()=> release(k);
+
+    b.ontouchstart = (e)=>{
+        e.preventDefault();
+        press(k);
+    };
+    b.ontouchend = ()=> release(k);
+});
+</script>
+
+</body>
+</html>
